@@ -1,6 +1,7 @@
 libfixposix (20110203.gitbcaef6a-1) UNRELEASED; urgency=low
 
-  * 
+  * debian/control:
+    + upgrade Build-Depends
 
  --
 

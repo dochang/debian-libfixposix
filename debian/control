@@ -3,7 +3,7 @@ Priority: optional
 Maintainer: Debian Common Lisp Team <pkg-common-lisp-devel@lists.alioth.debian.org>
 Uploaders: Desmond O. Chang <dochang@gmail.com>
 Build-Depends: debhelper (>= 7.0.50~), dh-autoreconf,
- autoconf (>= 2.65-1~), automake (>= 1:1.11-1~)
+ autoconf (>= 2.67-1~), automake (>= 1:1.11-1~), libtool (>= 2.2.6b-1~)
 Standards-Version: 3.9.1
 Section: libdevel
 Homepage: http://common-lisp.net/project/iolib/
