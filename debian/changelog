@@ -1,3 +1,9 @@
+libfixposix (20110203.gitbcaef6a-1) UNRELEASED; urgency=low
+
+  * 
+
+ --
+
 libfixposix (20101223.git080e618-1) unstable; urgency=low
 
   * Initial release (Closes: #607910)
