@@ -24,41 +24,28 @@
 
 #pragma once
 
-#include <sys/types.h>
+#include <lfp/aux.h>
+
+CPLUSPLUS_GUARD
+
+#include <time.h>
 #include <sys/time.h>
-#include <errno.h>
-#if defined(__APPLE__)
-# include <mach/mach.h>
+
+#include <inttypes.h>
+
+typedef uint64_t lfp_clockid_t;
+
+#if !defined(_POSIX_TIMERS) || _POSIX_TIMERS < 0
+# define CLOCK_REALTIME  0
+# define CLOCK_MONOTONIC 1
+#elif !defined(_POSIX_MONOTONIC_CLOCK) || _POSIX_MONOTONIC_CLOCK < 0
+# define CLOCK_MONOTONIC (1 << 32)
 #endif
 
-static inline void
-_lfp_timespec_to_timeval(struct timespec *ts, struct timeval *tv)
-{
-    tv->tv_sec = ts->tv_sec;
-    tv->tv_usec = ts->tv_nsec / 1000;
-}
+int lfp_clock_getres(lfp_clockid_t clk_id, struct timespec *res);
 
-static inline void
-_lfp_timeval_to_timespec(struct timeval *tv, struct timespec *ts)
-{
-    ts->tv_sec = tv->tv_sec;
-    ts->tv_nsec = tv->tv_usec * 1000;
-}
+int lfp_clock_gettime(lfp_clockid_t clk_id, struct timespec *tp);
 
-#if defined(__APPLE__)
-static inline void
-_lfp_timespec_to_mach_timespec_t(struct timespec *ts, mach_timespec_t *mts)
-{
-    mts->tv_sec = ts->tv_sec;
-    mts->tv_nsec = ts->tv_nsec;
-}
-#endif
+int lfp_clock_settime(lfp_clockid_t clk_id, struct timespec *tp);
 
-#define SYSERR(errcode) do { errno = errcode; return -1; } while(0)
-
-#define SYSCHECK(errcode,expr) do { if(expr) SYSERR(errcode); } while(0)
-
-#define SYSGUARD(expr) do { if((expr) < 0) return(-1); } while(0)
-
-/* not checking for OPEN_MAX, which might not be valid, on Linux */
-#define INVALID_FD(fd) ( fd < 0 )
+END_CPLUSPLUS_GUARD

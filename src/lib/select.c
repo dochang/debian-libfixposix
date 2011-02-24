@@ -22,28 +22,22 @@
 /* DEALINGS IN THE SOFTWARE.                                                   */
 /*******************************************************************************/
 
-#include <stdlib.h>
-#include <stdbool.h>
-#include <sys/select.h>
-#include <signal.h>
+#include <config.h>
 
-#include <libfixposix.h>
+#include <lfp/select.h>
+#include <stddef.h>
+
 #include "utils.h"
 
 int lfp_select(int nfds, fd_set *readfds, fd_set *writefds,
-               fd_set *exceptfds, const struct timespec *timeout,
-               const sigset_t *sigmask)
+               fd_set *exceptfds, const struct timespec *timeout)
 {
 #if defined(HAVE_PSELECT)
-    return pselect(nfds, readfds, writefds, exceptfds, timeout, sigmask);
+    return pselect(nfds, readfds, writefds, exceptfds, timeout, NULL);
 #else
-    sigset_t oldmask;
     struct timeval tv;
     _lfp_timespec_to_timeval(timeout, &tv);
-    pthread_sigmask(SIG_SETMASK, sigmask, &oldmask);
-    int ret = select(nfds, readfds, writefds, exceptfds, timeout);
-    pthread_sigmask(SIG_SETMASK, &oldmask, NULL);
-    return ret;
+    return select(nfds, readfds, writefds, exceptfds, timeout);
 #endif
 }
 

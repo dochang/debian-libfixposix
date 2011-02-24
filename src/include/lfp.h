@@ -24,41 +24,38 @@
 
 #pragma once
 
-#include <sys/types.h>
-#include <sys/time.h>
-#include <errno.h>
-#if defined(__APPLE__)
-# include <mach/mach.h>
-#endif
+#include <lfp/aux.h>
 
-static inline void
-_lfp_timespec_to_timeval(struct timespec *ts, struct timeval *tv)
-{
-    tv->tv_sec = ts->tv_sec;
-    tv->tv_usec = ts->tv_nsec / 1000;
-}
+#include <lfp/stdlib.h>
 
-static inline void
-_lfp_timeval_to_timespec(struct timeval *tv, struct timespec *ts)
-{
-    ts->tv_sec = tv->tv_sec;
-    ts->tv_nsec = tv->tv_usec * 1000;
-}
+#include <lfp/string.h>
 
-#if defined(__APPLE__)
-static inline void
-_lfp_timespec_to_mach_timespec_t(struct timespec *ts, mach_timespec_t *mts)
-{
-    mts->tv_sec = ts->tv_sec;
-    mts->tv_nsec = ts->tv_nsec;
-}
-#endif
+#include <lfp/errno.h>
 
-#define SYSERR(errcode) do { errno = errcode; return -1; } while(0)
+#include <lfp/fcntl.h>
 
-#define SYSCHECK(errcode,expr) do { if(expr) SYSERR(errcode); } while(0)
+#include <lfp/stat.h>
 
-#define SYSGUARD(expr) do { if((expr) < 0) return(-1); } while(0)
+#include <lfp/unistd.h>
 
-/* not checking for OPEN_MAX, which might not be valid, on Linux */
-#define INVALID_FD(fd) ( fd < 0 )
+#include <lfp/mman.h>
+
+#include <lfp/select.h>
+
+#include <lfp/socket.h>
+
+#include <lfp/wait.h>
+
+#include <lfp/signal.h>
+
+#include <lfp/spawn.h>
+
+#include <lfp/dirent.h>
+
+#include <lfp/time.h>
+
+#include <lfp/resource.h>
+
+#include <lfp/sendfile.h>
+
+#include <lfp/syslog.h>

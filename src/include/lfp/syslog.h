@@ -24,41 +24,26 @@
 
 #pragma once
 
-#include <sys/types.h>
-#include <sys/time.h>
-#include <errno.h>
-#if defined(__APPLE__)
-# include <mach/mach.h>
-#endif
+#include <lfp/aux.h>
 
-static inline void
-_lfp_timespec_to_timeval(struct timespec *ts, struct timeval *tv)
-{
-    tv->tv_sec = ts->tv_sec;
-    tv->tv_usec = ts->tv_nsec / 1000;
-}
+CPLUSPLUS_GUARD
 
-static inline void
-_lfp_timeval_to_timespec(struct timeval *tv, struct timespec *ts)
-{
-    ts->tv_sec = tv->tv_sec;
-    ts->tv_nsec = tv->tv_usec * 1000;
-}
+#include <syslog.h>
 
-#if defined(__APPLE__)
-static inline void
-_lfp_timespec_to_mach_timespec_t(struct timespec *ts, mach_timespec_t *mts)
-{
-    mts->tv_sec = ts->tv_sec;
-    mts->tv_nsec = ts->tv_nsec;
-}
-#endif
+#include <stdarg.h>
 
-#define SYSERR(errcode) do { errno = errcode; return -1; } while(0)
+void lfp_openlog(const char *ident, int options, int facility);
 
-#define SYSCHECK(errcode,expr) do { if(expr) SYSERR(errcode); } while(0)
+void lfp_syslog(int priority, const char *msg, ...);
 
-#define SYSGUARD(expr) do { if((expr) < 0) return(-1); } while(0)
+void lfp_vsyslog(int priority, const char *msg, va_list args);
 
-/* not checking for OPEN_MAX, which might not be valid, on Linux */
-#define INVALID_FD(fd) ( fd < 0 )
+void lfp_closelog(void);
+
+int lfp_setlogmask(int maskpri);
+
+int lfp_log_mask(int priority);
+
+int lfp_log_upto(int priority);
+
+END_CPLUSPLUS_GUARD

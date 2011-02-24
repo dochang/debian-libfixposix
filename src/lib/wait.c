@@ -22,10 +22,9 @@
 /* DEALINGS IN THE SOFTWARE.                                                   */
 /*******************************************************************************/
 
-#include <stdbool.h>
-#include <sys/wait.h>
+#include <config.h>
 
-#include <libfixposix.h>
+#include <lfp/wait.h>
 
 bool lfp_wifexited (int status)
 {
@@ -47,12 +46,12 @@ int lfp_wtermsig (int status)
   return WTERMSIG(status);
 }
 
-int lfp_wcoredump (int status)
+bool lfp_wcoredump (int status)
 {
 #ifdef WCOREDUMP
   return WCOREDUMP(status);
 #else
-  return 0;
+  return false;
 #endif
 }
 

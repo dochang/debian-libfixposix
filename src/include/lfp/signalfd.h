@@ -24,41 +24,24 @@
 
 #pragma once
 
-#include <sys/types.h>
-#include <sys/time.h>
-#include <errno.h>
-#if defined(__APPLE__)
-# include <mach/mach.h>
+#include <lfp/aux.h>
+
+CPLUSPLUS_GUARD
+
+#include <lfp/signal.h>
+
+#include <stdbool.h>
+
+#if defined(__linux__)
+# if @HAVE_EMULATED_SIGNALFD@ // HAVE_EMULATED_SIGNALFD
+struct signalfd_siginfo { unsigned int ssi_signo; };
+# else
+#  include <sys/signalfd.h>
+# endif
 #endif
 
-static inline void
-_lfp_timespec_to_timeval(struct timespec *ts, struct timeval *tv)
-{
-    tv->tv_sec = ts->tv_sec;
-    tv->tv_usec = ts->tv_nsec / 1000;
-}
+int lfp_install_signalfd(int signum, int sa_flags, bool* blockp);
 
-static inline void
-_lfp_timeval_to_timespec(struct timeval *tv, struct timespec *ts)
-{
-    ts->tv_sec = tv->tv_sec;
-    ts->tv_nsec = tv->tv_usec * 1000;
-}
+int lfp_uninstall_signalfd(int signum, bool block);
 
-#if defined(__APPLE__)
-static inline void
-_lfp_timespec_to_mach_timespec_t(struct timespec *ts, mach_timespec_t *mts)
-{
-    mts->tv_sec = ts->tv_sec;
-    mts->tv_nsec = ts->tv_nsec;
-}
-#endif
-
-#define SYSERR(errcode) do { errno = errcode; return -1; } while(0)
-
-#define SYSCHECK(errcode,expr) do { if(expr) SYSERR(errcode); } while(0)
-
-#define SYSGUARD(expr) do { if((expr) < 0) return(-1); } while(0)
-
-/* not checking for OPEN_MAX, which might not be valid, on Linux */
-#define INVALID_FD(fd) ( fd < 0 )
+END_CPLUSPLUS_GUARD

@@ -22,10 +22,16 @@
 /* DEALINGS IN THE SOFTWARE.                                                   */
 /*******************************************************************************/
 
-#include <fcntl.h>
+#include <config.h>
+
+#include <lfp/fcntl.h>
+#include <lfp/stdlib.h>
+#include <lfp/unistd.h>
+
+#include <stdbool.h>
 #include <stdarg.h>
 
-#include <libfixposix.h>
+#include "utils.h"
 
 int lfp_open (const char *pathname, uint64_t flags, ...)
 {
@@ -37,6 +43,21 @@ int lfp_open (const char *pathname, uint64_t flags, ...)
         return open(pathname, (int)flags & 0xFFFFFFFF, mode);
     } else {
         return open(pathname, (int)flags & 0xFFFFFFFF);
+    }
+}
+
+int lfp_openpt (uint64_t flags)
+{
+    bool cloexec = flags & O_CLOEXEC;
+    flags &= ~O_CLOEXEC;
+
+    int fd;
+    SYSGUARD(fd = posix_openpt((int)flags & 0xFFFFFFFF));
+    if (cloexec && lfp_set_fd_cloexec(fd, true) < 0) {
+        close(fd);
+        return -1;
+    } else {
+        return fd;
     }
 }
 

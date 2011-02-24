@@ -22,43 +22,38 @@
 /* DEALINGS IN THE SOFTWARE.                                                   */
 /*******************************************************************************/
 
-#pragma once
+#include <config.h>
 
-#include <sys/types.h>
-#include <sys/time.h>
-#include <errno.h>
-#if defined(__APPLE__)
-# include <mach/mach.h>
+#include <lfp/sendfile.h>
+
+#if defined(HAVE_SENDFILE)
+# if defined(__linux__)
+#  include <sys/sendfile.h>
+# elif defined(__FreeBSD__) || defined(__APPLE__)
+#  include <sys/types.h>
+#  include <sys/socket.h>
+#  include <sys/uio.h>
+# endif
 #endif
 
-static inline void
-_lfp_timespec_to_timeval(struct timespec *ts, struct timeval *tv)
-{
-    tv->tv_sec = ts->tv_sec;
-    tv->tv_usec = ts->tv_nsec / 1000;
-}
+#include "utils.h"
 
-static inline void
-_lfp_timeval_to_timespec(struct timeval *tv, struct timespec *ts)
+ssize_t lfp_sendfile(int out_fd, int in_fd, off_t offset, size_t nbytes)
 {
-    ts->tv_sec = tv->tv_sec;
-    ts->tv_nsec = tv->tv_usec * 1000;
-}
-
-#if defined(__APPLE__)
-static inline void
-_lfp_timespec_to_mach_timespec_t(struct timespec *ts, mach_timespec_t *mts)
-{
-    mts->tv_sec = ts->tv_sec;
-    mts->tv_nsec = ts->tv_nsec;
-}
+#if defined(HAVE_SENDFILE)
+# if defined(__linux__)
+    off_t off = offset;
+    return (ssize_t) sendfile(out_fd, in_fd, &off, nbytes);
+# elif defined(__FreeBSD__)
+    return (ssize_t) sendfile(in_fd, out_fd, offset, nbytes, NULL, SF_MNOWAIT);
+# elif defined(__APPLE__)
+    off_t len = nbytes;
+    return (ssize_t) sendfile(in_fd, out_fd, offset, &len, NULL, 0);
+# else
+#  error "It appears that this OS has sendfile(), but LFP doesn't use it at the moment"
+#  error "Please send an email to iolib-devel@common-lisp.net"
+# endif
+#else
+    return ENOSYS;
 #endif
-
-#define SYSERR(errcode) do { errno = errcode; return -1; } while(0)
-
-#define SYSCHECK(errcode,expr) do { if(expr) SYSERR(errcode); } while(0)
-
-#define SYSGUARD(expr) do { if((expr) < 0) return(-1); } while(0)
-
-/* not checking for OPEN_MAX, which might not be valid, on Linux */
-#define INVALID_FD(fd) ( fd < 0 )
+}

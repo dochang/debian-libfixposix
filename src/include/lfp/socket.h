@@ -24,41 +24,29 @@
 
 #pragma once
 
-#include <sys/types.h>
-#include <sys/time.h>
-#include <errno.h>
-#if defined(__APPLE__)
-# include <mach/mach.h>
-#endif
+#include <lfp/aux.h>
 
-static inline void
-_lfp_timespec_to_timeval(struct timespec *ts, struct timeval *tv)
-{
-    tv->tv_sec = ts->tv_sec;
-    tv->tv_usec = ts->tv_nsec / 1000;
-}
+CPLUSPLUS_GUARD
 
-static inline void
-_lfp_timeval_to_timespec(struct timeval *tv, struct timespec *ts)
-{
-    ts->tv_sec = tv->tv_sec;
-    ts->tv_nsec = tv->tv_usec * 1000;
-}
+#include <sys/socket.h>
 
-#if defined(__APPLE__)
-static inline void
-_lfp_timespec_to_mach_timespec_t(struct timespec *ts, mach_timespec_t *mts)
-{
-    mts->tv_sec = ts->tv_sec;
-    mts->tv_nsec = ts->tv_nsec;
-}
-#endif
+#include <inttypes.h>
 
-#define SYSERR(errcode) do { errno = errcode; return -1; } while(0)
+int lfp_socket(int domain, int type, int protocol, uint64_t flags);
 
-#define SYSCHECK(errcode,expr) do { if(expr) SYSERR(errcode); } while(0)
+int lfp_accept(int             sockfd,
+               struct sockaddr *addr,
+               socklen_t       *addrlen,
+               uint64_t        flags);
 
-#define SYSGUARD(expr) do { if((expr) < 0) return(-1); } while(0)
+struct cmsghdr* lfp_cmsg_firsthdr(struct msghdr* msgh);
 
-/* not checking for OPEN_MAX, which might not be valid, on Linux */
-#define INVALID_FD(fd) ( fd < 0 )
+struct cmsghdr* lfp_cmsg_nxthdr(struct msghdr* msgh, struct cmsghdr* cmsg);
+
+size_t lfp_cmsg_space(size_t length);
+
+size_t lfp_cmsg_len(size_t length);
+
+void* lfp_cmsg_data(struct cmsghdr* cmsg);
+
+END_CPLUSPLUS_GUARD

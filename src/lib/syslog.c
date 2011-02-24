@@ -22,43 +22,82 @@
 /* DEALINGS IN THE SOFTWARE.                                                   */
 /*******************************************************************************/
 
-#pragma once
+#include <config.h>
 
-#include <sys/types.h>
-#include <sys/time.h>
-#include <errno.h>
-#if defined(__APPLE__)
-# include <mach/mach.h>
-#endif
+#include <lfp/syslog.h>
+#include <lfp/stdlib.h>
+#include <lfp/string.h>
 
-static inline void
-_lfp_timespec_to_timeval(struct timespec *ts, struct timeval *tv)
+#include <pthread.h>
+
+#include "utils.h"
+
+static pthread_mutex_t syslog_mutex = PTHREAD_MUTEX_INITIALIZER;
+
+static char *syslog_ident = NULL;
+
+#define SYSLOG_IDENT_SIZE 1024
+
+static
+void _lfp_closelog()
 {
-    tv->tv_sec = ts->tv_sec;
-    tv->tv_usec = ts->tv_nsec / 1000;
+    closelog();
+    if (syslog_ident) {
+        free(syslog_ident);
+        syslog_ident = NULL;
+    }
 }
 
-static inline void
-_lfp_timeval_to_timespec(struct timeval *tv, struct timespec *ts)
+static
+void copy_syslog_ident(const char *ident)
 {
-    ts->tv_sec = tv->tv_sec;
-    ts->tv_nsec = tv->tv_usec * 1000;
+    if (ident) {
+        syslog_ident = malloc(SYSLOG_IDENT_SIZE);
+        strncpy(syslog_ident, ident, SYSLOG_IDENT_SIZE - 1);
+        syslog_ident[SYSLOG_IDENT_SIZE - 1] = 0;
+    }
 }
 
-#if defined(__APPLE__)
-static inline void
-_lfp_timespec_to_mach_timespec_t(struct timespec *ts, mach_timespec_t *mts)
+void lfp_openlog(const char *ident, int options, int facility)
 {
-    mts->tv_sec = ts->tv_sec;
-    mts->tv_nsec = ts->tv_nsec;
+    pthread_mutex_lock(&syslog_mutex);
+    _lfp_closelog();
+    copy_syslog_ident(ident);
+    openlog(syslog_ident, options, facility);
+    pthread_mutex_unlock(&syslog_mutex);
 }
-#endif
 
-#define SYSERR(errcode) do { errno = errcode; return -1; } while(0)
+void lfp_syslog(int priority, const char *msg, ...)
+{
+    va_list args;
+    va_start(args, msg);
+    vsyslog(priority, msg, args);
+    va_end(args);
+}
 
-#define SYSCHECK(errcode,expr) do { if(expr) SYSERR(errcode); } while(0)
+void lfp_vsyslog(int priority, const char *msg, va_list args)
+{
+    vsyslog(priority, msg, args);
+}
 
-#define SYSGUARD(expr) do { if((expr) < 0) return(-1); } while(0)
+void lfp_closelog(void)
+{
+    pthread_mutex_lock(&syslog_mutex);
+    _lfp_closelog();
+    pthread_mutex_unlock(&syslog_mutex);
+}
 
-/* not checking for OPEN_MAX, which might not be valid, on Linux */
-#define INVALID_FD(fd) ( fd < 0 )
+int lfp_setlogmask(int maskpri)
+{
+    return setlogmask(maskpri);
+}
+
+int lfp_log_mask(int priority)
+{
+    return LOG_MASK(priority);
+}
+
+int lfp_log_upto(int priority)
+{
+    return LOG_UPTO(priority);
+}

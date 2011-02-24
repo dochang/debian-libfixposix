@@ -22,9 +22,12 @@
 /* DEALINGS IN THE SOFTWARE.                                                   */
 /*******************************************************************************/
 
-#include <string.h>
+#include <config.h>
 
-#include <libfixposix.h>
+#include <lfp/string.h>
+#include <lfp/stdlib.h>
+#include <lfp/errno.h>
+
 #include "utils.h"
 
 #if defined(HAVE___XPG_STRERROR_R)
@@ -43,10 +46,35 @@ int lfp_strerror (int errnum, char *buf, size_t buflen)
 
 size_t lfp_strnlen(const char *s, size_t maxlen)
 {
+#if defined(HAVE_STRNLEN)
+    return strnlen(s, maxlen);
+#else
     for (size_t i = 0; i < maxlen; i++) {
         if (s[i] == '\0') {
             return i;
         }
     }
     return maxlen;
+#endif
+}
+
+char *lfp_strndup(const char *s, size_t maxlen)
+{
+#if defined(HAVE_STRNDUP)
+    return strndup(s, maxlen);
+#else
+    if (s == NULL) {
+        return NULL;
+    } else {
+        size_t len = lfp_strnlen(s, maxlen);
+        char *newstr = malloc(len + 1);
+        if (newstr == NULL) {
+            return NULL;
+        } else {
+            memcpy(newstr, s, len);
+            newstr[len] = '\0';
+            return newstr;
+        }
+    }
+#endif
 }

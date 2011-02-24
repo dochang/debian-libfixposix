@@ -22,11 +22,11 @@
 /* DEALINGS IN THE SOFTWARE.                                                   */
 /*******************************************************************************/
 
-#include <stdbool.h>
-#include <sys/socket.h>
-#include <fcntl.h>
+#include <config.h>
 
-#include <libfixposix.h>
+#include <lfp/socket.h>
+#include <lfp/fcntl.h>
+#include <lfp/unistd.h>
 
 int lfp_socket(int domain, int type, int protocol, uint64_t flags)
 {

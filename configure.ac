@@ -9,23 +9,24 @@ dnl WITHOUT ANY WARRANTY, to the extent permitted by law; without even the
 dnl implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
 dnl Minimum Autoconf version required.
-AC_PREREQ(2.60)
 AC_INIT([LibFixPOSIX], [0.1], [iolib-devel@common-lisp.net],
         [libfixposix], [http://common-lisp.net/project/iolib/])
-
-dnl Must come before AM_INIT_AUTOMAKE.
-AC_CONFIG_AUX_DIR([build-aux])
-AM_INIT_AUTOMAKE([1.11 foreign silent-rules subdir-objects])
-
-dnl Have Kbuild-like build output
-AM_SILENT_RULES([yes])
+AC_PREREQ([2.67])
+AC_CONFIG_HEADERS([config.h])
 
 dnl Where to generate output; srcdir location.
-AC_CONFIG_SRCDIR([src/lib/])
-# AC_CONFIG_HEADERS([config.h:config.h.in])
+AC_CONFIG_SRCDIR([src/lib/spawn.c])
 
 dnl Auxiliary M4 macros
 AC_CONFIG_MACRO_DIR([m4])
+
+dnl Must come before AM_INIT_AUTOMAKE.
+AC_CONFIG_AUX_DIR([.build-aux])
+AM_INIT_AUTOMAKE([1.10 foreign silent-rules subdir-objects
+                  color-tests parallel-tests])
+
+dnl Have Kbuild-like build output
+AM_SILENT_RULES([yes])
 
 dnl Contains replacement functions
 # AC_CONFIG_LIBOBJ_DIR([lib])
@@ -34,75 +35,45 @@ dnl Checks for programs.
 # We need a C compiler.
 AC_PROG_CC_C99
 # And we need libtool for building the shared library
-AC_PROG_LIBTOOL
+LT_INIT
+
+LFP_FLAGS_INIT
+
+dnl Checks for programs
+AC_CHECK_PROG([GETCONF], [getconf], [yes])
+if test "x$ac_cv_prog_GETCONF" != xyes
+then
+  AC_MSG_FAILURE([Program getconf not found])
+fi
 
 dnl Set compiler & linker flags
-case "$host" in
-     *-*-linux*)
-       LFP_CPPFLAGS="-D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE=1"
-       LFP_LIBS="-lrt"
-       ;;
-     *-*-freebsd*)
-       LFP_CPPFLAGS="-D__BSD_VISIBLE" ;;
-     *-*-solaris*)
-       LFP_CPPFLAGS="-D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64" ;;
-     *-apple-darwin*)
-       LFP_CPPFLAGS="-D_DARWIN_C_SOURCE";;
-esac
-LFP_CPPFLAGS="-D_XOPEN_SOURCE=700 $LFP_CPPFLAGS"
+LFP_SYS_PLATFORM_SPECIFIC_DEFINITIONS
+AX_PTHREAD
+LFP_SYS_LARGEFILE
 
-dnl Checks for C99 headers
+LFP_CPPFLAGS+=" $LFS_CFLAGS"
+LFP_CFLAGS+=" $PTHREAD_CFLAGS"
+LFP_LDFLAGS+=" $PTHREAD_LIBS $LFS_LDFLAGS $LFS_LIBS"
+
+dnl Checks for C99 & POSIX headers
 AC_HEADER_ASSERT
-AC_ENSURE_HEADER([stdlib.h])
-AC_ENSURE_HEADER([stdio.h])
-AC_ENSURE_HEADER([string.h])
-AC_ENSURE_HEADER([errno.h])
-AC_ENSURE_HEADER([time.h])
-
-dnl Checks for POSIX headers
-AC_ENSURE_HEADER([sys/types.h])
-AC_ENSURE_HEADER([unistd.h])
-AC_ENSURE_HEADER([fcntl.h])
-AC_ENSURE_HEADER([signal.h])
+LFP_REQUIRE_HEADERS([stdlib.h stdio.h string.h errno.h time.h])
+LFP_REQUIRE_HEADERS([sys/types.h unistd.h fcntl.h signal.h])
 AC_CHECK_HEADER([sys/signalfd.h])
 
+dnl Checks for declarations
+LFP_REQUIRE_DECLS([NSIG], [signal.h])
+
 dnl Checks for functions
-AC_CHECK_FUNCS([accept4])
-AC_CHECK_FUNCS([pipe2])
-AC_CHECK_FUNCS([__xpg_strerror_r])
-AC_ENSURE_FUNCS([pselect])
-AC_LFP_ENSURE_SUITABLE_CLOCKID_T
+AC_CHECK_FUNCS([__xpg_strerror_r strnlen strndup])
+AC_CHECK_FUNCS([accept4 pipe2 sendfile])
+LFP_REQUIRE_FUNCS([pselect vsyslog])
+LFP_CHECK_POSIX_MONOTONIC_CLOCK
 
-AC_ARG_ENABLE([emulated-signalfd],
-  [AS_HELP_STRING([--enable-emulated-signalfd={yes|no|check}],
-    [Use emulated signalfd @<:@default=check@:>@])],
-  [],
-  [enable_emulated_signalfd=check])
+dnl Checks for types
 
-AS_CASE($enable_emulated_signalfd,
-  [yes], [AC_DEFINE(HAVE_EMULATED_SIGNALFD, 1, [Whether to use signalfd emulation])
-          AC_SUBST(HAVE_EMULATED_SIGNALFD, 1)
-         ],
-  [check], [if test x"$ac_cv_header_sys_signalfd_h" = xyes ; then
-              AC_DEFINE(HAVE_EMULATED_SIGNALFD, 0, [Whether to use signalfd emulation])
-              AC_SUBST(HAVE_EMULATED_SIGNALFD, 0)
-            else
-              AC_DEFINE(HAVE_EMULATED_SIGNALFD, 1, [Whether to use signalfd emulation])
-              AC_SUBST(HAVE_EMULATED_SIGNALFD, 1)
-            fi],
-  [no], [if test x"$ac_cv_header_sys_signalfd_h" = xyes ; then
-           AC_DEFINE(HAVE_EMULATED_SIGNALFD, 0, [Whether to use signalfd emulation])
-           AC_SUBST(HAVE_EMULATED_SIGNALFD, 0)
-         else
-           AC_MSG_FAILURE([signalfd emulation was disabled although <sys/signalfd.h> is absent])
-         fi],
-  [AC_MSG_FAILURE(
-    [--enable-emulated-signalfd was given an illegal value: "$enable_emulated_signalfd"])])
+dnl Configuration switches
+# LFP_ARG_ENABLE_EMULATED_SIGNALFD
 
-AC_SUBST(LFP_CPPFLAGS)
-AC_SUBST(LFP_INTERNAL_CPPFLAGS)
-AC_SUBST(LFP_CFLAGS)
-AC_SUBST(LFP_LIBS)
-
-AC_CONFIG_FILES([Makefile libfixposix.pc src/lib/libfixposix.h])
+AC_CONFIG_FILES([Makefile libfixposix.pc])
 AC_OUTPUT

@@ -22,21 +22,31 @@
 /* DEALINGS IN THE SOFTWARE.                                                   */
 /*******************************************************************************/
 
-#include <string.h>
-#include <unistd.h>
-#include <signal.h>
-#include <stdio.h>
+#include <config.h>
 
-#include <libfixposix.h>
+#include <lfp/spawn.h>
+#include <lfp/stdlib.h>
+#include <lfp/string.h>
+#include <lfp/errno.h>
+#include <lfp/unistd.h>
+#include <lfp/signal.h>
+
+#include <stdio.h>
+#include <limits.h>
+#include <sys/ioctl.h>
+
 #include "utils.h"
 #include "spawn.h"
 
-#define LFP_SPAWN_ALLFLAGS ( LFP_SPAWN_SETSIGMASK    | \
+#define LFP_SPAWN_ALLATTRS ( LFP_SPAWN_SETSIGMASK    | \
                              LFP_SPAWN_SETSIGDEFAULT | \
                              LFP_SPAWN_SETPGROUP     | \
                              LFP_SPAWN_RESETIDS      | \
                              LFP_SPAWN_SETUID        | \
-                             LFP_SPAWN_SETGID          )
+                             LFP_SPAWN_SETGID        | \
+                             LFP_SPAWN_SETCWD        | \
+                             LFP_SPAWN_SETSID        | \
+                             LFP_SPAWN_SETCTTY       )
 
 int lfp_spawnattr_init(lfp_spawnattr_t *attr)
 {
@@ -49,6 +59,14 @@ int lfp_spawnattr_init(lfp_spawnattr_t *attr)
 int lfp_spawnattr_destroy(lfp_spawnattr_t *attr)
 {
     SYSCHECK(EINVAL, attr == NULL);
+    if (attr->chdir_path) {
+        free(attr->chdir_path);
+        attr->chdir_path = NULL;
+    }
+    if (attr->pts_path) {
+        free(attr->pts_path);
+        attr->pts_path = NULL;
+    }
     return 0;
 }
 
@@ -61,7 +79,7 @@ int lfp_spawnattr_getflags(lfp_spawnattr_t *attr, uint32_t *flags)
 
 int lfp_spawnattr_setflags(lfp_spawnattr_t *attr, const uint32_t flags)
 {
-    SYSCHECK(EINVAL, attr == NULL || (flags & ~LFP_SPAWN_ALLFLAGS) != 0);
+    SYSCHECK(EINVAL, attr == NULL || (flags & ~LFP_SPAWN_ALLATTRS) != 0);
     attr->flags = flags;
     return 0;
 }
@@ -69,7 +87,7 @@ int lfp_spawnattr_setflags(lfp_spawnattr_t *attr, const uint32_t flags)
 int lfp_spawnattr_getsigmask(lfp_spawnattr_t *attr, sigset_t *sigmask)
 {
     SYSCHECK(EINVAL, attr == NULL || sigmask == NULL);
-    *sigmask = attr->sigmask;
+    memcpy(sigmask, &attr->sigmask, sizeof(sigset_t));
     return 0;
 }
 
@@ -77,14 +95,14 @@ int lfp_spawnattr_setsigmask(lfp_spawnattr_t *attr, const sigset_t *sigmask)
 {
     SYSCHECK(EINVAL, attr == NULL);
     attr->flags |= LFP_SPAWN_SETSIGMASK;
-    attr->sigmask = *sigmask;
+    memcpy(&attr->sigmask, sigmask, sizeof(sigset_t));
     return 0;
 }
 
 int lfp_spawnattr_getsigdefault(lfp_spawnattr_t *attr, sigset_t *sigdefault)
 {
     SYSCHECK(EINVAL, attr == NULL || sigdefault == NULL);
-    *sigdefault = attr->sigdefault;
+    memcpy(sigdefault, &attr->sigdefault, sizeof(sigset_t));
     return 0;
 }
 
@@ -92,7 +110,7 @@ int lfp_spawnattr_setsigdefault(lfp_spawnattr_t *attr, const sigset_t *sigdefaul
 {
     SYSCHECK(EINVAL, attr == NULL || sigdefault == NULL);
     attr->flags |= LFP_SPAWN_SETSIGDEFAULT;
-    attr->sigdefault = *sigdefault;
+    memcpy(&attr->sigdefault, sigdefault, sizeof(sigset_t));
     return 0;
 }
 
@@ -108,6 +126,51 @@ int lfp_spawnattr_setpgroup(lfp_spawnattr_t *attr, const pid_t pgroup)
     SYSCHECK(EINVAL, attr == NULL);
     attr->flags |= LFP_SPAWN_SETPGROUP;
     attr->pgroup = pgroup;
+    return 0;
+}
+
+int lfp_spawnattr_setsid(lfp_spawnattr_t *attr)
+{
+    SYSCHECK(EINVAL, attr == NULL);
+    attr->flags |= LFP_SPAWN_SETSID;
+    return 0;
+}
+
+int lfp_spawnattr_getctty(lfp_spawnattr_t *attr, char **path)
+{
+    SYSCHECK(EINVAL, attr == NULL || path == NULL);
+    *path = strdup(attr->pts_path);
+    return 0;
+}
+
+int lfp_spawnattr_setctty(lfp_spawnattr_t *attr, const char *path)
+{
+    SYSCHECK(EINVAL, attr == NULL || path == NULL);
+    attr->flags |= LFP_SPAWN_SETCTTY;
+    if (attr->pts_path) {
+        free(attr->pts_path);
+    }
+    attr->pts_path = lfp_strndup(path, PATH_MAX);
+    attr->pts_path[PATH_MAX] = 0;
+    return 0;
+}
+
+int lfp_spawnattr_getcwd(lfp_spawnattr_t *attr, char **path)
+{
+    SYSCHECK(EINVAL, attr == NULL || path == NULL);
+    *path = strdup(attr->chdir_path);
+    return 0;
+}
+
+int lfp_spawnattr_setcwd(lfp_spawnattr_t *attr, const char *path)
+{
+    SYSCHECK(EINVAL, attr == NULL || path == NULL);
+    attr->flags |= LFP_SPAWN_SETCWD;
+    if (attr->chdir_path) {
+        free(attr->chdir_path);
+    }
+    attr->chdir_path = lfp_strndup(path, PATH_MAX);
+    attr->chdir_path[PATH_MAX] = 0;
     return 0;
 }
 
@@ -145,31 +208,30 @@ int lfp_spawnattr_setgid(lfp_spawnattr_t *attr, const gid_t gid)
 
 int lfp_spawn_apply_attributes(const lfp_spawnattr_t *attr)
 {
-    if(attr == NULL)
-        return 0;
+    if (attr == NULL) return 0;
 
     SYSCHECK(EINVAL, (attr->flags & LFP_SPAWN_RESETIDS) && \
                      ((attr->flags & LFP_SPAWN_SETUID)  || \
-                      (attr->flags & LFP_SPAWN_SETUID)));
+                      (attr->flags & LFP_SPAWN_SETGID)));
 
     if (attr->flags & LFP_SPAWN_SETSIGMASK)
         if (sigprocmask(SIG_SETMASK, &attr->sigmask, NULL) < 0) {
 #if !defined(NDEBUG)
             perror("LFP_SPAWN_APPLY_ATTR:SETSIGMASK:sigprocmask");
 #endif
-            return lfp_errno();
+            goto error_return;
         }
 
     if (attr->flags & LFP_SPAWN_SETSIGDEFAULT) {
         struct sigaction sa = { .sa_flags   = 0,
                                 .sa_handler = SIG_DFL };
-        for (int i = 1; i <= LFP_NSIG; i++)
+        for (int i = 1; i <= NSIG; i++)
             if (sigismember(&attr->sigdefault, i))
                 if (sigaction(i, &sa, NULL) < 0) {
 #if !defined(NDEBUG)
                     perror("LFP_SPAWN_APPLY_ATTR:SETSIGDEFAULT:sigaction");
 #endif
-                    return lfp_errno();
+                    goto error_return;
                 }
     }
 
@@ -178,7 +240,40 @@ int lfp_spawn_apply_attributes(const lfp_spawnattr_t *attr)
 #if !defined(NDEBUG)
             perror("LFP_SPAWN_APPLY_ATTR:SETPGROUP:setpgid");
 #endif
-            return lfp_errno();
+            goto error_return;
+        }
+
+    if (attr->flags & LFP_SPAWN_SETSID)
+        if (setsid() < 0) {
+#if !defined(NDEBUG)
+            perror("LFP_SPAWN_APPLY_ATTR:SETSID:setsid");
+#endif
+            goto error_return;
+        }
+
+    if (attr->flags & LFP_SPAWN_SETCTTY) {
+        int ttyfd = lfp_open(attr->pts_path, O_RDWR | O_NOCTTY);
+        if (ttyfd  < 0) {
+#if !defined(NDEBUG)
+		perror("LFP_SPAWN_APPLY_ATTR:SETCTTY:lfp_open");
+#endif
+		goto error_return;
+        } else {
+	    if (ioctl(ttyfd, TIOCSCTTY) < 0) {
+#if !defined(NDEBUG)
+		perror("LFP_SPAWN_APPLY_ATTR:SETCTTY:ioctl");
+#endif
+		goto error_return;
+	    }
+	}
+    }
+
+    if (attr->flags & LFP_SPAWN_SETCWD)
+        if (chdir(attr->chdir_path) < 0) {
+#if !defined(NDEBUG)
+            perror("LFP_SPAWN_APPLY_ATTR:SETCWD:chdir");
+#endif
+            goto error_return;
         }
 
     if (attr->flags & LFP_SPAWN_RESETIDS) {
@@ -186,13 +281,13 @@ int lfp_spawn_apply_attributes(const lfp_spawnattr_t *attr)
 #if !defined(NDEBUG)
             perror("LFP_SPAWN_APPLY_ATTR:RESETIDS:seteuid");
 #endif
-            return lfp_errno();
+            goto error_return;
         }
         if (setegid(getgid()) < 0) {
 #if !defined(NDEBUG)
             perror("LFP_SPAWN_APPLY_ATTR:RESETIDS:setegid");
 #endif
-            return lfp_errno();
+            goto error_return;
         }
     }
 
@@ -201,7 +296,7 @@ int lfp_spawn_apply_attributes(const lfp_spawnattr_t *attr)
 #if !defined(NDEBUG)
             perror("LFP_SPAWN_APPLY_ATTR:SETUID:seteuid");
 #endif
-            return lfp_errno();
+            goto error_return;
         }
 
     if (attr->flags & LFP_SPAWN_SETGID)
@@ -209,8 +304,10 @@ int lfp_spawn_apply_attributes(const lfp_spawnattr_t *attr)
 #if !defined(NDEBUG)
             perror("LFP_SPAWN_APPLY_ATTR:SETGID:setegid");
 #endif
-            return lfp_errno();
+            goto error_return;
         }
 
     return 0;
+  error_return:
+    return lfp_errno();
 }

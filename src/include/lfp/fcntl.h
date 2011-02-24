@@ -24,41 +24,37 @@
 
 #pragma once
 
-#include <sys/types.h>
-#include <sys/time.h>
-#include <errno.h>
-#if defined(__APPLE__)
-# include <mach/mach.h>
+#include <lfp/aux.h>
+
+CPLUSPLUS_GUARD
+
+#include <fcntl.h>
+
+#include <inttypes.h>
+#include <stdbool.h>
+
+extern char **environ;
+
+#if !defined(O_CLOEXEC)
+// Syscalls use "int" for passing flags, and since
+// *nix systems use the LP64 data model, "int" is 32 bits
+// which means that we can allocate unsupported flags in the
+// upper part of an uint64_t value
+# define O_CLOEXEC ( 1ULL << 32 )
 #endif
 
-static inline void
-_lfp_timespec_to_timeval(struct timespec *ts, struct timeval *tv)
-{
-    tv->tv_sec = ts->tv_sec;
-    tv->tv_usec = ts->tv_nsec / 1000;
-}
+int lfp_open(const char *pathname, uint64_t flags, ...);
 
-static inline void
-_lfp_timeval_to_timespec(struct timeval *tv, struct timespec *ts)
-{
-    ts->tv_sec = tv->tv_sec;
-    ts->tv_nsec = tv->tv_usec * 1000;
-}
+int lfp_openpt(uint64_t flags);
 
-#if defined(__APPLE__)
-static inline void
-_lfp_timespec_to_mach_timespec_t(struct timespec *ts, mach_timespec_t *mts)
-{
-    mts->tv_sec = ts->tv_sec;
-    mts->tv_nsec = ts->tv_nsec;
-}
-#endif
+int lfp_creat(const char *pathname, mode_t mode);
 
-#define SYSERR(errcode) do { errno = errcode; return -1; } while(0)
+int lfp_is_fd_cloexec(int fd);
 
-#define SYSCHECK(errcode,expr) do { if(expr) SYSERR(errcode); } while(0)
+int lfp_set_fd_cloexec(int fd, bool enabled);
 
-#define SYSGUARD(expr) do { if((expr) < 0) return(-1); } while(0)
+int lfp_is_fd_nonblock(int fd);
 
-/* not checking for OPEN_MAX, which might not be valid, on Linux */
-#define INVALID_FD(fd) ( fd < 0 )
+int lfp_set_fd_nonblock(int fd, bool enabled);
+
+END_CPLUSPLUS_GUARD

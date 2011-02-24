@@ -22,43 +22,72 @@
 /* DEALINGS IN THE SOFTWARE.                                                   */
 /*******************************************************************************/
 
-#pragma once
+#include <config.h>
 
-#include <sys/types.h>
-#include <sys/time.h>
-#include <errno.h>
-#if defined(__APPLE__)
-# include <mach/mach.h>
-#endif
+#include <lfp/stat.h>
+#include <lfp/errno.h>
 
-static inline void
-_lfp_timespec_to_timeval(struct timespec *ts, struct timeval *tv)
+int lfp_stat(const char *path, struct stat *buf)
 {
-    tv->tv_sec = ts->tv_sec;
-    tv->tv_usec = ts->tv_nsec / 1000;
+    return stat(path, buf);
 }
 
-static inline void
-_lfp_timeval_to_timespec(struct timeval *tv, struct timespec *ts)
+int lfp_fstat(int fd, struct stat *buf)
 {
-    ts->tv_sec = tv->tv_sec;
-    ts->tv_nsec = tv->tv_usec * 1000;
+    return fstat(fd, buf);
 }
 
-#if defined(__APPLE__)
-static inline void
-_lfp_timespec_to_mach_timespec_t(struct timespec *ts, mach_timespec_t *mts)
+int lfp_lstat(const char *path, struct stat *buf)
 {
-    mts->tv_sec = ts->tv_sec;
-    mts->tv_nsec = ts->tv_nsec;
+    return lstat(path, buf);
 }
-#endif
 
-#define SYSERR(errcode) do { errno = errcode; return -1; } while(0)
+int lfp_is_fd_open(int fd)
+{
+    struct stat buf;
+    int ret = fstat(fd, &buf);
+    if ( ret < 0 ) {
+        if ( lfp_errno() == EBADF ) {
+            return false;
+        } else {
+            return -1;
+        }
+    } else {
+        return true;
+    }
+}
 
-#define SYSCHECK(errcode,expr) do { if(expr) SYSERR(errcode); } while(0)
+bool lfp_isreg(mode_t mode)
+{
+    return (bool) S_ISREG(mode);
+}
 
-#define SYSGUARD(expr) do { if((expr) < 0) return(-1); } while(0)
+bool lfp_isdir(mode_t mode)
+{
+    return (bool) S_ISDIR(mode);
+}
 
-/* not checking for OPEN_MAX, which might not be valid, on Linux */
-#define INVALID_FD(fd) ( fd < 0 )
+bool lfp_ischr(mode_t mode)
+{
+    return (bool) S_ISCHR(mode);
+}
+
+bool lfp_isblk(mode_t mode)
+{
+    return (bool) S_ISBLK(mode);
+}
+
+bool lfp_isfifo(mode_t mode)
+{
+    return (bool) S_ISFIFO(mode);
+}
+
+bool lfp_islnk(mode_t mode)
+{
+    return (bool) S_ISLNK(mode);
+}
+
+bool lfp_issock(mode_t mode)
+{
+    return (bool) S_ISSOCK(mode);
+}

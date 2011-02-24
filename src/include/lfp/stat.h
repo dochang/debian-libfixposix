@@ -22,16 +22,36 @@
 /* DEALINGS IN THE SOFTWARE.                                                   */
 /*******************************************************************************/
 
-#include "utils.h"
+#pragma once
 
-void _lfp_timespec_to_timeval(struct timespec *ts, struct timeval *tv)
-{
-    tv->tv_sec = ts->tv_sec;
-    tv->tv_usec = ts->tv_nsec / 1000;
-}
+#include <lfp/aux.h>
 
-void _lfp_timeval_to_timespec(struct timeval *tv, struct timespec *ts)
-{
-    ts->tv_sec = tv->tv_sec;
-    ts->tv_nsec = tv->tv_usec * 1000;
-}
+CPLUSPLUS_GUARD
+
+#include <sys/stat.h>
+
+#include <stdbool.h>
+
+int lfp_stat(const char *path, struct stat *buf);
+
+int lfp_fstat(int fd, struct stat *buf);
+
+int lfp_lstat(const char *path, struct stat *buf);
+
+int lfp_is_fd_open(int fd);
+
+bool lfp_isreg(mode_t mode);
+
+bool lfp_isdir(mode_t mode);
+
+bool lfp_ischr(mode_t mode);
+
+bool lfp_isblk(mode_t mode);
+
+bool lfp_isfifo(mode_t mode);
+
+bool lfp_islnk(mode_t mode);
+
+bool lfp_issock(mode_t mode);
+
+END_CPLUSPLUS_GUARD

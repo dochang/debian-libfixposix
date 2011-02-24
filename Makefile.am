@@ -8,11 +8,13 @@
 
 ACLOCAL_AMFLAGS = -I m4
 
-AM_CFLAGS = -std=c99 -Wall -Wextra -Wmissing-prototypes \
-	    -Wmissing-declarations -Wmissing-field-initializers
+AM_CPPFLAGS = $(LFP_CPPFLAGS)
 
-INCLUDES = $(LFP_CPPFLAGS) $(LFP_INTERNAL_CPPFLAGS) $(LFP_CFLAGS) \
-	   -I$(top_builddir)/src/lib
+AM_CFLAGS = -Wall -Wextra -Wmissing-prototypes \
+	    -Wmissing-declarations -Wmissing-field-initializers \
+	    $(LFP_CFLAGS)
+
+INCLUDES = -I$(top_builddir)/src/include -I$(top_srcdir)/src/include
 
 
 
@@ -35,23 +37,58 @@ pkgconfig_DATA = libfixposix.pc
 
 lib_LTLIBRARIES = src/lib/libfixposix.la
 
-src_lib_libfixposix_la_SOURCES = \
-	src/lib/utils.c \
-	src/lib/stdlib.c src/lib/string.c src/lib/fcntl.c \
-	src/lib/unistd.c src/lib/mman.c \
-	src/lib/select.c src/lib/socket.c \
-	src/lib/errno.c src/lib/wait.c \
-	src/lib/signal.c \
-	src/lib/spawnattr.c src/lib/spawn_file_actions.c src/lib/spawn.c \
-	src/lib/dirent.c src/lib/time.c src/lib/resource.c
-# src/lib/install_signalfd.c
-
+# Private headers, used only for internal definitions
+# The only purpose of this definition it to ensure that
+#  «make dist» knows about them
 noinst_HEADERS = src/lib/utils.h src/lib/spawn.h
 
-src_lib_libfixposix_la_LIBADD = $(LFP_LIBS)
+include_HEADERS = src/include/lfp.h
 
-include_HEADERS = \
-	src/lib/libfixposix.h
+include_lfpdir = $(includedir)/lfp
+include_lfp_HEADERS = \
+	src/include/lfp/aux.h \
+	src/include/lfp/stdlib.h \
+	src/include/lfp/string.h \
+	src/include/lfp/errno.h \
+	src/include/lfp/fcntl.h \
+	src/include/lfp/stat.h \
+	src/include/lfp/unistd.h \
+	src/include/lfp/mman.h \
+	src/include/lfp/select.h \
+	src/include/lfp/socket.h \
+	src/include/lfp/wait.h \
+	src/include/lfp/signal.h \
+	src/include/lfp/spawn.h \
+	src/include/lfp/dirent.h \
+	src/include/lfp/time.h \
+	src/include/lfp/resource.h \
+	src/include/lfp/sendfile.h \
+	src/include/lfp/syslog.h
+# src/include/lfp/signalfd.h
+
+src_lib_libfixposix_la_SOURCES = \
+	src/lib/stdlib.c \
+	src/lib/string.c \
+	src/lib/errno.c \
+	src/lib/fcntl.c \
+	src/lib/stat.c \
+	src/lib/unistd.c \
+	src/lib/mman.c \
+	src/lib/select.c \
+	src/lib/socket.c \
+	src/lib/wait.c \
+	src/lib/signal.c \
+	src/lib/spawnattr.c \
+	src/lib/spawn_file_actions.c \
+	src/lib/spawn.c \
+	src/lib/dirent.c \
+	src/lib/time.c \
+	src/lib/resource.c \
+	src/lib/sendfile.c \
+	src/lib/syslog.c
+# src/lib/install_signalfd.c
+
+src_lib_libfixposix_la_LIBADD = $(LFP_LDFLAGS)
 
 
 

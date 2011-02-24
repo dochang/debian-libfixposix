@@ -22,20 +22,22 @@
 /* DEALINGS IN THE SOFTWARE.                                                   */
 /*******************************************************************************/
 
-#include <time.h>
-#include <sys/time.h>
+#include <config.h>
 
-#if defined(__DARWIN__)
-# include <mach.h>
+#include <lfp/time.h>
+#include <lfp/errno.h>
+#include <lfp/unistd.h>
+
+#if defined(__APPLE__)
+# include <mach/mach.h>
 # include <mach/clock.h>
 #endif
 
-#include <libfixposix.h>
 #include "utils.h"
 
 int lfp_clock_getres(lfp_clockid_t clk_id, struct timespec *res)
 {
-#if defined(_POSIX_TIMERS) && defined(_POSIX_MONOTONIC_CLOCK)
+#if defined(_POSIX_MONOTONIC_CLOCK) && _POSIX_MONOTONIC_CLOCK >= 0
     return clock_getres((clockid_t)clk_id & 0xFFFFFFFF, res);
 #else
     switch (clk_id) {
@@ -52,7 +54,7 @@ int lfp_clock_getres(lfp_clockid_t clk_id, struct timespec *res)
 #endif
 }
 
-#if !defined(_POSIX_TIMERS)
+#if !defined(_POSIX_TIMERS) || _POSIX_TIMERS < 0
 static inline
 int _lfp_clock_gettime_realtime(struct timespec *tp)
 {
@@ -66,18 +68,17 @@ int _lfp_clock_gettime_realtime(struct timespec *tp)
 }
 #endif
 
-#if !defined(_POSIX_MONOTONIC_CLOCK)
+#if !defined(_POSIX_MONOTONIC_CLOCK) || _POSIX_MONOTONIC_CLOCK < 0
 static inline
 int _lfp_clock_gettime_monotonic(struct timespec *tp)
 {
-# if defined(__DARWIN__)
-    kern_return_t kret;
+# if defined(__APPLE__)
     clock_serv_t clk_serv;
+    mach_timespec_t mtp;
+    _lfp_timespec_to_mach_timespec_t(tp, &mtp);
 
-    kret = host_get_clock_service(mach_host_self(), 0, &clk_serv);
-    if (ret < 0) { return -1; }
-    kret = clock_get_time(*clk_serv, tp);
-    if (ret < 0) { return -1; }
+    SYSGUARD(host_get_clock_service(mach_host_self(), 0, &clk_serv));
+    SYSGUARD(clock_get_time(clk_serv, &mtp));
     return 0;
 # else
     SYSERR(EINVAL);
@@ -87,7 +88,7 @@ int _lfp_clock_gettime_monotonic(struct timespec *tp)
 
 int lfp_clock_gettime(lfp_clockid_t clk_id, struct timespec *tp)
 {
-#if defined(_POSIX_TIMERS) && defined(_POSIX_MONOTONIC_CLOCK)
+#if defined(_POSIX_MONOTONIC_CLOCK) && _POSIX_MONOTONIC_CLOCK >= 0
     return clock_gettime((clockid_t)clk_id & 0xFFFFFFFF, tp);
 #else
     switch (clk_id) {
@@ -103,7 +104,7 @@ int lfp_clock_gettime(lfp_clockid_t clk_id, struct timespec *tp)
 
 int lfp_clock_settime(lfp_clockid_t clk_id, struct timespec *tp)
 {
-#if defined(_POSIX_TIMERS) && defined(_POSIX_MONOTONIC_CLOCK)
+#if defined(_POSIX_MONOTONIC_CLOCK) && _POSIX_MONOTONIC_CLOCK >= 0
     return clock_settime((clockid_t)clk_id & 0xFFFFFFFF, tp);
 #else
     int ret;
