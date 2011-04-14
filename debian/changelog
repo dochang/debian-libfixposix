@@ -1,11 +1,11 @@
-libfixposix (20110316.git47f17f7-1) UNRELEASED; urgency=low
+libfixposix (20110316.git47f17f7-1) unstable; urgency=low
 
   * delete unnecessary debian/*.dirs
   * delete the sample comment in debian/rules
   * debian/rules
     + clear dependency_libs (Closes: #622416)
 
- --
+ -- Desmond O. Chang <dochang@gmail.com>  Thu, 14 Apr 2011 20:21:48 +0800
 
 libfixposix (20110203.gitbcaef6a-1) unstable; urgency=low
 
