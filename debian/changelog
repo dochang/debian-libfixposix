@@ -2,6 +2,8 @@ libfixposix (20110316.git47f17f7-1) UNRELEASED; urgency=low
 
   * delete unnecessary debian/*.dirs
   * delete the sample comment in debian/rules
+  * debian/rules
+    + clear dependency_libs (Closes: #622416)
 
  --
 

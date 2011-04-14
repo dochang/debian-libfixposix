@@ -6,3 +6,7 @@
 
 %:
 	dh $@ --with autoreconf
+
+override_dh_install:
+	dh_install
+	sed -e "s/^dependency_libs=.*/dependency_libs=''/" < src/lib/libfixposix.la > debian/libfixposix-dev/usr/lib/libfixposix.la
