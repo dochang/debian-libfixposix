@@ -11,7 +11,6 @@ Vcs-Git: git://git.debian.org/pkg-common-lisp/libfixposix.git
 Vcs-Browser: http://git.debian.org/?p=pkg-common-lisp/libfixposix.git;a=summary
 
 Package: libfixposix-dev
-Section: libdevel
 Architecture: any
 Depends: libfixposix0 (= ${binary:Version}), ${misc:Depends}
 Description: Replacement for inconsistent parts of POSIX (development)
