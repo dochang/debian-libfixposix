@@ -4,6 +4,7 @@ libfixposix (20110706.gitcf6e954-1) UNRELEASED; urgency=low
   * upgrade debhelper compatibility level to 8
   * remove duplicate binary control field
   * add debian/libfixposix0.symbols
+  * Build-Depends on libtool (>= 2.4-1~)
 
  --
 
