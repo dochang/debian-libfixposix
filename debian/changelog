@@ -1,3 +1,9 @@
+libfixposix (20110706.gitcf6e954-1) UNRELEASED; urgency=low
+
+  * 
+
+ --
+
 libfixposix (20110316.git47f17f7-1) unstable; urgency=low
 
   * delete unnecessary debian/*.dirs
