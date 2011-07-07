@@ -1,6 +1,7 @@
 libfixposix (20110706.gitcf6e954-1) UNRELEASED; urgency=low
 
   * upgrade Standards-Version to 3.9.2
+  * upgrade debhelper compatibility level to 8
 
  --
 
