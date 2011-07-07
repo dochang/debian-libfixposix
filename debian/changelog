@@ -1,4 +1,4 @@
-libfixposix (20110706.gitcf6e954-1) UNRELEASED; urgency=low
+libfixposix (20110706.gitcf6e954-1) unstable; urgency=low
 
   * upgrade Standards-Version to 3.9.2
   * upgrade debhelper compatibility level to 8
@@ -8,7 +8,7 @@ libfixposix (20110706.gitcf6e954-1) UNRELEASED; urgency=low
   * debian/rules
     + build static library for *-dev package
 
- --
+ -- Desmond O. Chang <dochang@gmail.com>  Thu, 07 Jul 2011 15:38:34 +0800
 
 libfixposix (20110316.git47f17f7-1) unstable; urgency=low
 
