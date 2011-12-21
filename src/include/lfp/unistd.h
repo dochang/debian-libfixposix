@@ -27,11 +27,18 @@
 
 #include <lfp/aux.h>
 
-CPLUSPLUS_GUARD
+LFP_BEGIN_DECLS
 
+#include <sys/types.h>
 #include <unistd.h>
 
 #include <inttypes.h>
+
+char **lfp_get_environ(void);
+
+int lfp_set_environ(char **newenv);
+
+int lfp_clearenv(void);
 
 off_t lfp_lseek(int fd, off_t offset, int whence);
 
@@ -46,11 +53,13 @@ int lfp_truncate(const char *path, off_t length);
 int lfp_ftruncate(int fd, off_t length);
 
 int lfp_execve(const char *path, char *const argv[], char *const envp[])
-    __attribute__((nonnull (1)));
+    __attribute__((nonnull (1, 2)));
 
 int lfp_execvpe(const char *file, char *const argv[], char *const envp[])
-    __attribute__((nonnull (1)));
+    __attribute__((nonnull (1, 2)));
 
-END_CPLUSPLUS_GUARD
+int lfp_getpeereid(int socket, uid_t *euid, gid_t *egid);
+
+LFP_END_DECLS
 
 #endif /* _LFP_UNISTD_H_ */

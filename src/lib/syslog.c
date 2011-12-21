@@ -22,15 +22,11 @@
 /* DEALINGS IN THE SOFTWARE.                                                   */
 /*******************************************************************************/
 
-#include <config.h>
-
 #include <lfp/syslog.h>
 #include <lfp/stdlib.h>
 #include <lfp/string.h>
 
 #include <pthread.h>
-
-#include "utils.h"
 
 static pthread_mutex_t syslog_mutex = PTHREAD_MUTEX_INITIALIZER;
 
@@ -38,8 +34,8 @@ static char *syslog_ident = NULL;
 
 #define SYSLOG_IDENT_SIZE 1024
 
-static
-void _lfp_closelog()
+static void
+_lfp_closelog(void)
 {
     closelog();
     if (syslog_ident) {
@@ -48,8 +44,8 @@ void _lfp_closelog()
     }
 }
 
-static
-void copy_syslog_ident(const char *ident)
+static void
+copy_syslog_ident(const char *ident)
 {
     if (ident) {
         syslog_ident = malloc(SYSLOG_IDENT_SIZE);
@@ -58,7 +54,8 @@ void copy_syslog_ident(const char *ident)
     }
 }
 
-void lfp_openlog(const char *ident, int options, int facility)
+DSO_PUBLIC void
+lfp_openlog(const char *ident, int options, int facility)
 {
     pthread_mutex_lock(&syslog_mutex);
     _lfp_closelog();
@@ -67,7 +64,8 @@ void lfp_openlog(const char *ident, int options, int facility)
     pthread_mutex_unlock(&syslog_mutex);
 }
 
-void lfp_syslog(int priority, const char *msg, ...)
+DSO_PUBLIC void
+lfp_syslog(int priority, const char *msg, ...)
 {
     va_list args;
     va_start(args, msg);
@@ -75,29 +73,34 @@ void lfp_syslog(int priority, const char *msg, ...)
     va_end(args);
 }
 
-void lfp_vsyslog(int priority, const char *msg, va_list args)
+DSO_PUBLIC void
+lfp_vsyslog(int priority, const char *msg, va_list args)
 {
     vsyslog(priority, msg, args);
 }
 
-void lfp_closelog(void)
+DSO_PUBLIC void
+lfp_closelog(void)
 {
     pthread_mutex_lock(&syslog_mutex);
     _lfp_closelog();
     pthread_mutex_unlock(&syslog_mutex);
 }
 
-int lfp_setlogmask(int maskpri)
+DSO_PUBLIC int
+lfp_setlogmask(int maskpri)
 {
     return setlogmask(maskpri);
 }
 
-int lfp_log_mask(int priority)
+DSO_PUBLIC int
+lfp_log_mask(int priority)
 {
     return LOG_MASK(priority);
 }
 
-int lfp_log_upto(int priority)
+DSO_PUBLIC int
+lfp_log_upto(int priority)
 {
     return LOG_UPTO(priority);
 }

@@ -27,14 +27,12 @@
 
 #include <lfp/aux.h>
 
-CPLUSPLUS_GUARD
+LFP_BEGIN_DECLS
 
 #include <fcntl.h>
 
 #include <inttypes.h>
 #include <stdbool.h>
-
-extern char **environ;
 
 #if !defined(O_CLOEXEC)
 // Syscalls use "int" for passing flags, and since
@@ -58,6 +56,6 @@ int lfp_is_fd_nonblock(int fd);
 
 int lfp_set_fd_nonblock(int fd, bool enabled);
 
-END_CPLUSPLUS_GUARD
+LFP_END_DECLS
 
 #endif /* _LFP_FCNTL_H_ */

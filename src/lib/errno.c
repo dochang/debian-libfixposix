@@ -22,16 +22,16 @@
 /* DEALINGS IN THE SOFTWARE.                                                   */
 /*******************************************************************************/
 
-#include <config.h>
-
 #include <lfp/errno.h>
 
-int lfp_errno ()
+DSO_PUBLIC int
+lfp_errno (void)
 {
   return errno;
 }
 
-int lfp_set_errno (int value)
+DSO_PUBLIC int
+lfp_set_errno (int value)
 {
   errno = value;
   return errno;

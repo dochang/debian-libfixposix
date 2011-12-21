@@ -22,60 +22,21 @@
 /* DEALINGS IN THE SOFTWARE.                                                   */
 /*******************************************************************************/
 
-#include <lfp/wait.h>
+#include <lfp/strerror.h>
 
-DSO_PUBLIC bool
-lfp_wifexited (int status)
-{
-  return WIFEXITED(status);
-}
+#include <string.h>
 
-DSO_PUBLIC int
-lfp_wexitstatus (int status)
-{
-  return WEXITSTATUS(status);
-}
-
-DSO_PUBLIC bool
-lfp_wifsignaled (int status)
-{
-  return WIFSIGNALED(status);
-}
-
-DSO_PUBLIC int
-lfp_wtermsig (int status)
-{
-  return WTERMSIG(status);
-}
-
-DSO_PUBLIC bool
-lfp_wcoredump (int status)
-{
-#ifdef WCOREDUMP
-  return WCOREDUMP(status);
-#else
-  return false;
+#if defined(HAVE___XPG_STRERROR_R)
+int __xpg_strerror_r (int errnum, char *buf, size_t buflen);
 #endif
-}
-
-DSO_PUBLIC bool
-lfp_wifstopped (int status)
-{
-  return WIFSTOPPED(status);
-}
 
 DSO_PUBLIC int
-lfp_wstopsig (int status)
+lfp_strerror (int errnum, char *buf, size_t buflen)
 {
-  return WSTOPSIG(status);
-}
-
-DSO_PUBLIC bool
-lfp_wifcontinued (int status)
-{
-#ifdef WIFCONTINUED
-  return WIFCONTINUED(status);
+    SYSCHECK(EINVAL, buf == NULL);
+#if defined(HAVE___XPG_STRERROR_R)
+    return __xpg_strerror_r(errnum, buf, buflen);
 #else
-  return false;
-#endif
+    return strerror_r(errnum, buf, buflen);
+#endif // HAVE___XPG_STRERROR_R
 }

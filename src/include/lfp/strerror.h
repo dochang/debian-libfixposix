@@ -22,60 +22,17 @@
 /* DEALINGS IN THE SOFTWARE.                                                   */
 /*******************************************************************************/
 
-#include <lfp/wait.h>
+#if !defined(_LFP_STRING_H_)
+# define _LFP_STRING_H_
 
-DSO_PUBLIC bool
-lfp_wifexited (int status)
-{
-  return WIFEXITED(status);
-}
+#include <lfp/aux.h>
 
-DSO_PUBLIC int
-lfp_wexitstatus (int status)
-{
-  return WEXITSTATUS(status);
-}
+LFP_BEGIN_DECLS
 
-DSO_PUBLIC bool
-lfp_wifsignaled (int status)
-{
-  return WIFSIGNALED(status);
-}
+#include <sys/types.h>
 
-DSO_PUBLIC int
-lfp_wtermsig (int status)
-{
-  return WTERMSIG(status);
-}
+int lfp_strerror(int errnum, char *buf, size_t buflen);
 
-DSO_PUBLIC bool
-lfp_wcoredump (int status)
-{
-#ifdef WCOREDUMP
-  return WCOREDUMP(status);
-#else
-  return false;
-#endif
-}
+LFP_END_DECLS
 
-DSO_PUBLIC bool
-lfp_wifstopped (int status)
-{
-  return WIFSTOPPED(status);
-}
-
-DSO_PUBLIC int
-lfp_wstopsig (int status)
-{
-  return WSTOPSIG(status);
-}
-
-DSO_PUBLIC bool
-lfp_wifcontinued (int status)
-{
-#ifdef WIFCONTINUED
-  return WIFCONTINUED(status);
-#else
-  return false;
-#endif
-}
+#endif /* _LFP_STRING_H_ */

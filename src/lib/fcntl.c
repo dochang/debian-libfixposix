@@ -22,8 +22,6 @@
 /* DEALINGS IN THE SOFTWARE.                                                   */
 /*******************************************************************************/
 
-#include <config.h>
-
 #include <lfp/fcntl.h>
 #include <lfp/stdlib.h>
 #include <lfp/unistd.h>
@@ -31,9 +29,8 @@
 #include <stdbool.h>
 #include <stdarg.h>
 
-#include "utils.h"
-
-int lfp_open (const char *pathname, uint64_t flags, ...)
+DSO_PUBLIC int
+lfp_open (const char *pathname, uint64_t flags, ...)
 {
     if (flags & O_CREAT) {
         va_list args;
@@ -46,7 +43,8 @@ int lfp_open (const char *pathname, uint64_t flags, ...)
     }
 }
 
-int lfp_openpt (uint64_t flags)
+DSO_PUBLIC int
+lfp_openpt (uint64_t flags)
 {
     bool cloexec = flags & O_CLOEXEC;
     flags &= ~O_CLOEXEC;
@@ -61,14 +59,16 @@ int lfp_openpt (uint64_t flags)
     }
 }
 
-int lfp_creat (const char *pathname, mode_t mode)
+DSO_PUBLIC int
+lfp_creat (const char *pathname, mode_t mode)
 {
     return creat(pathname, mode);
 }
 
 
 
-int lfp_is_fd_cloexec (int fd)
+DSO_PUBLIC int
+lfp_is_fd_cloexec (int fd)
 {
     int current_flags = fcntl(fd, F_GETFD);
     if (current_flags < 0) {
@@ -78,7 +78,8 @@ int lfp_is_fd_cloexec (int fd)
     }
 }
 
-int lfp_set_fd_cloexec (int fd, bool enabled)
+DSO_PUBLIC int
+lfp_set_fd_cloexec (int fd, bool enabled)
 {
     int current_flags = fcntl(fd, F_GETFD);
     if (current_flags < 0) {
@@ -94,7 +95,8 @@ int lfp_set_fd_cloexec (int fd, bool enabled)
     }
 }
 
-int lfp_is_fd_nonblock (int fd)
+DSO_PUBLIC int
+lfp_is_fd_nonblock (int fd)
 {
     int current_flags = fcntl(fd, F_GETFL);
     if (current_flags < 0) {
@@ -104,7 +106,8 @@ int lfp_is_fd_nonblock (int fd)
     }
 }
 
-int lfp_set_fd_nonblock (int fd, bool enabled)
+DSO_PUBLIC int
+lfp_set_fd_nonblock (int fd, bool enabled)
 {
     int current_flags = fcntl(fd, F_GETFL);
     if (current_flags < 0) {

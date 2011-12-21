@@ -22,8 +22,6 @@
 /* DEALINGS IN THE SOFTWARE.                                                   */
 /*******************************************************************************/
 
-#include <config.h>
-
 #include <lfp/spawn.h>
 #include <lfp/stdlib.h>
 #include <lfp/string.h>
@@ -32,7 +30,6 @@
 
 #include <limits.h>
 
-#include "utils.h"
 #include "spawn.h"
 
 typedef enum {
@@ -50,7 +47,8 @@ typedef struct lfp_spawn_action {
     mode_t mode;
 } lfp_spawn_action;
 
-int lfp_spawn_file_actions_init(lfp_spawn_file_actions_t *file_actions)
+DSO_PUBLIC int
+lfp_spawn_file_actions_init(lfp_spawn_file_actions_t *file_actions)
 {
     SYSCHECK(EINVAL, file_actions == NULL);
     file_actions->initialized = 0;
@@ -67,7 +65,8 @@ void lfp_spawn_file_actions_free_paths(lfp_spawn_action *actions, int initialize
             free((void*)actions[i].path);
 }
 
-int lfp_spawn_file_actions_destroy(lfp_spawn_file_actions_t *file_actions)
+DSO_PUBLIC int
+lfp_spawn_file_actions_destroy(lfp_spawn_file_actions_t *file_actions)
 {
     SYSCHECK(EINVAL, file_actions == NULL);
     if (file_actions->actions) {
@@ -81,13 +80,13 @@ int lfp_spawn_file_actions_destroy(lfp_spawn_file_actions_t *file_actions)
 static
 lfp_spawn_action* lfp_spawn_file_actions_allocate(lfp_spawn_file_actions_t *file_actions)
 {
-    int index = file_actions->initialized++;
+    int init_index = file_actions->initialized++;
     int allocated = file_actions->allocated;
     lfp_spawn_action *actions = file_actions->actions;
     int new_allocated;
     lfp_spawn_action *new_actions;
 
-    if (index >= allocated) {
+    if (init_index >= allocated) {
         /* Note: this code assumes we run out of memory before we overflow. */
         new_allocated = 4 + allocated * 3 / 2;
         new_actions = calloc(new_allocated, sizeof(lfp_spawn_action));
@@ -101,14 +100,15 @@ lfp_spawn_action* lfp_spawn_file_actions_allocate(lfp_spawn_file_actions_t *file
         actions = new_actions;
         file_actions->actions = actions;
         file_actions->allocated = new_allocated;
-        memset(actions+index, 0, (new_allocated - index) * sizeof(lfp_spawn_action));
+        memset(actions + init_index, 0, (new_allocated - init_index) * sizeof(lfp_spawn_action));
     }
-    return actions + index;
+    return actions + init_index;
 }
 
-int lfp_spawn_file_actions_addopen(lfp_spawn_file_actions_t *file_actions,
-                                   int fd, const char *path,
-                                   uint64_t oflags, mode_t mode)
+DSO_PUBLIC int
+lfp_spawn_file_actions_addopen(lfp_spawn_file_actions_t *file_actions,
+                               int fd, const char *path,
+                               uint64_t oflags, mode_t mode)
 {
     SYSCHECK(EINVAL, file_actions == NULL);
     SYSCHECK(EBADF, INVALID_FD(fd));
@@ -118,15 +118,16 @@ int lfp_spawn_file_actions_addopen(lfp_spawn_file_actions_t *file_actions,
 
     action->type = LFP_SPAWN_FILE_ACTION_OPEN;
     action->fd = fd;
-    action->path = lfp_strndup(path, PATH_MAX);
+    action->path = strdup(path);
     action->flags = oflags;
     action->mode = mode;
 
     return 0;
 }
 
-int lfp_spawn_file_actions_addclose(lfp_spawn_file_actions_t *file_actions,
-                                    int fd)
+DSO_PUBLIC int
+lfp_spawn_file_actions_addclose(lfp_spawn_file_actions_t *file_actions,
+                                int fd)
 {
     SYSCHECK(EINVAL, file_actions == NULL);
     SYSCHECK(EBADF, INVALID_FD(fd));
@@ -140,8 +141,9 @@ int lfp_spawn_file_actions_addclose(lfp_spawn_file_actions_t *file_actions,
     return 0;
 }
 
-int lfp_spawn_file_actions_adddup2(lfp_spawn_file_actions_t *file_actions,
-                                   int fd, int newfd)
+DSO_PUBLIC int
+lfp_spawn_file_actions_adddup2(lfp_spawn_file_actions_t *file_actions,
+                               int fd, int newfd)
 {
     SYSCHECK(EINVAL, file_actions == NULL);
     SYSCHECK(EBADF, INVALID_FD(fd) || INVALID_FD(newfd));

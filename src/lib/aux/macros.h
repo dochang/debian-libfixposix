@@ -22,33 +22,29 @@
 /* DEALINGS IN THE SOFTWARE.                                                   */
 /*******************************************************************************/
 
-#if !defined(_LFP_TIME_H_)
-# define _LFP_TIME_H_
+#if !defined(_LFP_INTERNAL_AUX_MACROS_H_)
+# define _LFP_INTERNAL_AUX_MACROS_H_
 
-#include <lfp/aux.h>
+#include <errno.h>
 
-CPLUSPLUS_GUARD
+#define SYSERR(errcode) \
+ do { errno = errcode; return -1; } while(0)
 
-#include <time.h>
-#include <sys/time.h>
+#define SYSCHECK(errcode,expr) \
+ do { if(expr) SYSERR(errcode); } while(0)
 
-#include <inttypes.h>
+#define SYSGUARD(expr) \
+ do { if((expr) < 0) return(-1); } while(0)
 
-typedef uint64_t lfp_clockid_t;
+#define MACH_SYSERR(errcode) \
+ do { errno = errcode; ret = -1; goto cleanup; } while(0)
 
-#if !defined(_POSIX_TIMERS) || _POSIX_TIMERS < 0
-# define CLOCK_REALTIME  0
-# define CLOCK_MONOTONIC 1
-#elif !defined(_POSIX_MONOTONIC_CLOCK) || _POSIX_MONOTONIC_CLOCK < 0
-# define CLOCK_MONOTONIC (1 << 32)
-#endif
+#define MACH_SYSCHECK(errcode, expr) \
+ do { if(expr) MACH_SYSERR(errcode); } while(0)
 
-int lfp_clock_getres(lfp_clockid_t clk_id, struct timespec *res);
+/* not checking for OPEN_MAX, which might not be valid, on Linux */
+#define INVALID_FD(fd) ( fd < 0 )
 
-int lfp_clock_gettime(lfp_clockid_t clk_id, struct timespec *tp);
+#define DSO_PUBLIC __attribute__ ((visibility ("default")))
 
-int lfp_clock_settime(lfp_clockid_t clk_id, struct timespec *tp);
-
-END_CPLUSPLUS_GUARD
-
-#endif /* _LFP_TIME_H_ */
+#endif /* _LFP_INTERNAL_AUX_MACROS_H_ */

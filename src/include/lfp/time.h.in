@@ -22,46 +22,33 @@
 /* DEALINGS IN THE SOFTWARE.                                                   */
 /*******************************************************************************/
 
-#if !defined(_LFP_INTERNAL_UTILS_H_)
-# define _LFP_INTERNAL_UTILS_H_
+#if !defined(_LFP_TIME_H_)
+# define _LFP_TIME_H_
 
-#include <sys/types.h>
+#include <lfp/aux.h>
+
+LFP_BEGIN_DECLS
+
 #include <sys/time.h>
-#include <errno.h>
-#if defined(__APPLE__)
-# include <mach/mach.h>
-#endif
+#include <time.h>
 
-static inline void
-_lfp_timespec_to_timeval(struct timespec *ts, struct timeval *tv)
-{
-    tv->tv_sec = ts->tv_sec;
-    tv->tv_usec = ts->tv_nsec / 1000;
-}
+#include <inttypes.h>
 
-static inline void
-_lfp_timeval_to_timespec(struct timeval *tv, struct timespec *ts)
-{
-    ts->tv_sec = tv->tv_sec;
-    ts->tv_nsec = tv->tv_usec * 1000;
-}
+#if ! @HAVE_CLOCKID_T@
+typedef int clockid_t;
+#endif // HAVE_CLOCKID_T
 
-#if defined(__APPLE__)
-static inline void
-_lfp_timespec_to_mach_timespec_t(struct timespec *ts, mach_timespec_t *mts)
-{
-    mts->tv_sec = ts->tv_sec;
-    mts->tv_nsec = ts->tv_nsec;
-}
-#endif
+#if ! @HAVE_CLOCK_GETTIME@
+# define CLOCK_REALTIME  0
+# define CLOCK_MONOTONIC 1
+#endif // HAVE_CLOCK_GETTIME
 
-#define SYSERR(errcode) do { errno = errcode; return -1; } while(0)
+int lfp_clock_getres(clockid_t clk_id, struct timespec *res);
 
-#define SYSCHECK(errcode,expr) do { if(expr) SYSERR(errcode); } while(0)
+int lfp_clock_gettime(clockid_t clk_id, struct timespec *tp);
 
-#define SYSGUARD(expr) do { if((expr) < 0) return(-1); } while(0)
+int lfp_clock_settime(clockid_t clk_id, struct timespec *tp);
 
-/* not checking for OPEN_MAX, which might not be valid, on Linux */
-#define INVALID_FD(fd) ( fd < 0 )
+LFP_END_DECLS
 
-#endif /* _LFP_INTERNAL_UTILS_H_ */
+#endif /* _LFP_TIME_H_ */

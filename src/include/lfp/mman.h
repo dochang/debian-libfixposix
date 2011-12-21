@@ -27,15 +27,15 @@
 
 #include <lfp/aux.h>
 
-CPLUSPLUS_GUARD
+LFP_BEGIN_DECLS
 
 #include <sys/mman.h>
 
-void *lfp_mmap(void *addr, size_t length, int prot,
+void* lfp_mmap(void *addr, size_t length, int prot,
                int flags, int fd, off_t offset);
 
 int lfp_munmap(void *addr, size_t length);
 
-END_CPLUSPLUS_GUARD
+LFP_END_DECLS
 
 #endif /* _LFP_MMAN_H_ */

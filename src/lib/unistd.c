@@ -22,27 +22,103 @@
 /* DEALINGS IN THE SOFTWARE.                                                   */
 /*******************************************************************************/
 
-#include <config.h>
-
 #include <lfp/unistd.h>
 #include <lfp/stdlib.h>
 #include <lfp/string.h>
 #include <lfp/errno.h>
 #include <lfp/fcntl.h>
 
+#if !defined(HAVE_GETPEEREID)
+# if defined(HAVE_UCRED_H)
+#  include <ucred.h>
+# else
+#  include <sys/socket.h>
+# endif
+#endif
+
+#if defined(__APPLE__)
+# include <crt_externs.h>
+#else
+extern char** environ;
+#endif
+
 #include <limits.h>
 #include <stdio.h>
 
-#include "utils.h"
+DSO_PUBLIC char**
+lfp_get_environ(void)
+{
+#if defined(__APPLE__)
+    return *_NSGetEnviron();
+#else
+    return environ;
+#endif
+}
 
-off_t lfp_lseek(int fd, off_t offset, int whence)
+DSO_PUBLIC int
+lfp_set_environ(char **newenv)
+{
+    if (lfp_clearenv() < 0) {
+        return -1;
+    } else if (newenv != NULL) {
+        for(char **var = newenv; *var != NULL; var++) {
+            putenv(*var);
+        }
+    }
+    return 0;
+}
+
+#if !defined(HAVE_CLEARENV)
+static void
+_lfp_reset_environ(void)
+{
+# if defined(__APPLE__)
+    char ***envptr = _NSGetEnviron();
+    *envptr = NULL;
+# else
+    environ = NULL;
+# endif
+}
+#endif
+
+DSO_PUBLIC int
+lfp_clearenv(void)
+{
+#if defined(HAVE_CLEARENV)
+    return clearenv();
+#else
+    char **env = lfp_get_environ();
+    if (env == NULL) return 0;
+
+    for(char **var = env; *var != NULL; var++) {
+        char *tmp = strdup(*var);
+        char *eql = strchr(tmp, '=');
+        if (eql == NULL) {
+            free(tmp);
+            return -1;
+        } else {
+            eql = '\0';
+            unsetenv(eql);
+            free(tmp);
+        }
+    }
+
+    _lfp_reset_environ();
+    return 0;
+#endif
+}
+
+
+DSO_PUBLIC off_t
+lfp_lseek(int fd, off_t offset, int whence)
 {
     return lseek(fd, offset, whence);
 }
 
 
 
-int lfp_pipe (int pipefd[2], uint64_t flags)
+DSO_PUBLIC int
+lfp_pipe (int pipefd[2], uint64_t flags)
 {
 #if defined(HAVE_PIPE2)
     // We assume that if pipe2() is defined then O_CLOEXEC too
@@ -76,31 +152,36 @@ int lfp_pipe (int pipefd[2], uint64_t flags)
 
 
 
-ssize_t lfp_pread(int fd, void *buf, size_t count, off_t offset)
+DSO_PUBLIC ssize_t
+lfp_pread(int fd, void *buf, size_t count, off_t offset)
 {
     return pread(fd, buf, count, offset);
 }
 
-ssize_t lfp_pwrite(int fd, const void *buf, size_t count, off_t offset)
+DSO_PUBLIC ssize_t
+lfp_pwrite(int fd, const void *buf, size_t count, off_t offset)
 {
     return pwrite(fd, buf, count, offset);
 }
 
 
 
-int lfp_truncate(const char *path, off_t length)
+DSO_PUBLIC int
+lfp_truncate(const char *path, off_t length)
 {
     return truncate(path, length);
 }
 
-int lfp_ftruncate(int fd, off_t length)
+DSO_PUBLIC int
+lfp_ftruncate(int fd, off_t length)
 {
     return ftruncate(fd, length);
 }
 
 
 
-int lfp_execve(const char *path, char *const argv[], char *const envp[])
+DSO_PUBLIC int
+lfp_execve(const char *path, char *const argv[], char *const envp[])
 {
     SYSCHECK(EINVAL, path == NULL);
     SYSCHECK(ENOENT, path[0] == '\0');
@@ -108,7 +189,8 @@ int lfp_execve(const char *path, char *const argv[], char *const envp[])
     return execve(path, argv, envp);
 }
 
-int lfp_execvpe(const char *file, char *const argv[], char *const envp[])
+DSO_PUBLIC int
+lfp_execvpe(const char *file, char *const argv[], char *const envp[])
 {
     SYSCHECK(EINVAL, file == NULL);
     SYSCHECK(ENOENT, file[0] == '\0');
@@ -120,11 +202,13 @@ int lfp_execvpe(const char *file, char *const argv[], char *const envp[])
     size_t filelen = lfp_strnlen(file, name_max);
     SYSCHECK(ENAMETOOLONG, filelen >= name_max);
 
-    char path[PATH_MAX], *searchpath=NULL, *tmpath=NULL, *bindir=NULL;
+    char path[PATH_MAX];
+    char *searchpath=NULL, *tmpath=NULL, *saveptr=NULL, *bindir=NULL;
 
     tmpath = searchpath = lfp_getpath(envp);
 
-    while ((bindir = strsep(&tmpath, ":")) != NULL)
+    while ((bindir = strtok_r(tmpath, ":", &saveptr)) != NULL) {
+        tmpath = NULL;
         if ( bindir[0] != '\0' ) {
             size_t dirlen = lfp_strnlen(bindir, PATH_MAX);
             // directory + / + file
@@ -133,13 +217,42 @@ int lfp_execvpe(const char *file, char *const argv[], char *const envp[])
             SYSCHECK(ENAMETOOLONG, pathlen >= PATH_MAX);
             snprintf(path, PATH_MAX, "%s/%s", bindir, file);
             path[pathlen] = '\0';
-            lfp_execve(path, argv, envp);
+            execve(path, argv, envp);
             if ( errno == E2BIG  || errno == ENOEXEC ||
                  errno == ENOMEM || errno == ETXTBSY )
                 break;
         }
+    }
 
     free(searchpath);
 
     return -1;
+}
+
+
+DSO_PUBLIC int
+lfp_getpeereid(int sockfd, uid_t *euid, gid_t *egid)
+{
+#if defined(HAVE_GETPEEREID)
+    return getpeereid(sockfd, euid, egid);
+#elif defined(HAVE_GETPEERUCRED)
+    ucred_t stack_ucred;
+    ucred_t *ucred = &stack_ucred;
+
+    SYSGUARD(getpeerucred(sockfd, &ucred));
+    *euid = ucred_geteuid(ucred);
+    *egid = ucred_getegid(ucred);
+
+    return (*euid < 0 || *egid < 0) ? -1 : 0;
+#elif defined(SO_PEERCRED)
+    struct ucred ucred;
+    socklen_t len = sizeof(ucred);
+
+    SYSGUARD(getsockopt(sockfd, SOL_SOCKET, SO_PEERCRED, &ucred, &len));
+
+    *euid = ucred.uid;
+    *egid = ucred.gid;
+
+    return 0;
+#endif
 }

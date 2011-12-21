@@ -22,23 +22,23 @@
 /* DEALINGS IN THE SOFTWARE.                                                   */
 /*******************************************************************************/
 
-#include <config.h>
-
 #include <lfp/sendfile.h>
 
 #if defined(HAVE_SENDFILE)
 # if defined(__linux__)
 #  include <sys/sendfile.h>
-# elif defined(__FreeBSD__) || defined(__APPLE__)
+# elif defined(__FreeBSD__)
 #  include <sys/types.h>
 #  include <sys/socket.h>
 #  include <sys/uio.h>
+# elif defined(__APPLE__)
+// OSX doesn't expose sendfile if XOPEN_SOURCE is defined
+int sendfile(int, int, off_t, off_t *, void *, int);
 # endif
 #endif
 
-#include "utils.h"
-
-ssize_t lfp_sendfile(int out_fd, int in_fd, off_t offset, size_t nbytes)
+DSO_PUBLIC ssize_t
+lfp_sendfile(int out_fd, int in_fd, off_t offset, size_t nbytes)
 {
 #if defined(HAVE_SENDFILE)
 # if defined(__linux__)

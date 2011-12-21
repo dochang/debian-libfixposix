@@ -22,35 +22,42 @@
 /* DEALINGS IN THE SOFTWARE.                                                   */
 /*******************************************************************************/
 
-#include <config.h>
-
 #include <lfp/stdlib.h>
 #include <lfp/string.h>
+#include <lfp/unistd.h>
 
 #include <limits.h>
 #include <stdbool.h>
 #include <unistd.h>
 #include <pthread.h>
 
-int lfp_mkstemp(char *template)
+DSO_PUBLIC int
+lfp_mkstemp(char *template)
 {
     return mkstemp(template);
 }
 
-static
-char* _lfp_getenv(const char *name, unsigned short len, char *const envp[])
+static bool
+valid_path_p(const char *path, size_t len)
 {
-    if (envp == NULL) return NULL;
+    return path[len] == '/' && path[len+1] != '\0' ? true : false;
+}
+
+static char*
+_lfp_getenv(const char *name, size_t len, char *const envp[])
+{
+    if (envp == NULL || *envp == NULL)
+        return NULL;
     do {
-        if (strlen(*envp) > len && strncmp(name, *envp, len) == 0)
-            return (char*)*envp+len;
+        if (strncmp(name, *envp, len) == 0 && valid_path_p(*envp, len))
+            return *envp+len;
     } while(*(++envp) != NULL);
     return NULL;
 }
 
 // FIXME: add autoconf check that confstr(_CS_PATH) returns sane values
-static
-char* _lfp_default_path(void)
+static char*
+_lfp_default_path(void)
 {
     size_t default_path_size = confstr(_CS_PATH, NULL, 0);
     char *default_path = malloc(default_path_size);
@@ -58,9 +65,11 @@ char* _lfp_default_path(void)
     return default_path;
 }
 
-char* lfp_getpath(char *const envp[])
+DSO_PUBLIC char*
+lfp_getpath(char *const envp[])
 {
-    char *envpath = _lfp_getenv("PATH=", sizeof("PATH=")-1, envp);
+    char *envpath = _lfp_getenv("PATH=", sizeof("PATH=") - 1,
+                                envp ? envp : lfp_get_environ());
     if (envpath != NULL) {
         return strdup(envpath);
     } else {
@@ -70,13 +79,14 @@ char* lfp_getpath(char *const envp[])
 
 static pthread_mutex_t ptsname_mutex = PTHREAD_MUTEX_INITIALIZER;
 
-char *lfp_ptsname(int masterfd)
+DSO_PUBLIC char*
+lfp_ptsname(int masterfd)
 {
     pthread_mutex_lock(&ptsname_mutex);
 
     char *_name = ptsname(masterfd);
     if (_name != NULL) {
-        _name = lfp_strndup(_name, PATH_MAX);
+        _name = strdup(_name);
     }
 
     pthread_mutex_unlock(&ptsname_mutex);

@@ -22,17 +22,17 @@
 /* DEALINGS IN THE SOFTWARE.                                                   */
 /*******************************************************************************/
 
-#include <config.h>
-
 #include <lfp/mman.h>
 
-void *lfp_mmap(void *addr, size_t length, int prot,
-               int flags, int fd, off_t offset)
+DSO_PUBLIC void*
+lfp_mmap(void *addr, size_t length, int prot,
+         int flags, int fd, off_t offset)
 {
     return mmap(addr, length, prot, flags, fd, offset);
 }
 
-int lfp_munmap(void *addr, size_t length)
+DSO_PUBLIC int
+lfp_munmap(void *addr, size_t length)
 {
     return munmap(addr, length);
 }
