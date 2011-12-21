@@ -1,3 +1,9 @@
+libfixposix (20111205.git2a9a4d1-1) UNRELEASED; urgency=low
+
+  * New upstream git checkout
+
+ --
+
 libfixposix (20110316.git47f17f7-1) unstable; urgency=low
 
   * delete unnecessary debian/*.dirs
