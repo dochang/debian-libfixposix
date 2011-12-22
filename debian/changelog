@@ -3,6 +3,7 @@ libfixposix (20111205.git2a9a4d1-1) UNRELEASED; urgency=low
   * New upstream git checkout
   * debian/control
     + Build-Depends on check & pkg-config
+    + upgrade Standards-Version to 3.9.2
   * debian/rules
     + build static library for *-dev package
 

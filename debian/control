@@ -5,7 +5,7 @@ Uploaders: Desmond O. Chang <dochang@gmail.com>
 Build-Depends: debhelper (>= 7.0.50~), dh-autoreconf,
  autoconf (>= 2.67-1~), automake (>= 1:1.11-1~), libtool (>= 2.2.6b-1~),
  check (>= 0.9.4), pkg-config (>= 0.25)
-Standards-Version: 3.9.1
+Standards-Version: 3.9.2
 Section: libdevel
 Homepage: http://common-lisp.net/project/iolib/
 Vcs-Git: git://git.debian.org/pkg-common-lisp/libfixposix.git
