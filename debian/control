@@ -29,3 +29,14 @@ Description: Replacement for inconsistent parts of POSIX (runtime)
  POSIX whose behaviour is inconsistent across *NIX flavours.
  .
  This package contains the shared library.
+
+Package: libfixposix-dbg
+Priority: extra
+Section: debug
+Architecture: any
+Depends: libfixposix1 (= ${binary:Version}), ${misc:Depends}
+Description: Replacement for inconsistent parts of POSIX (debug)
+ The purpose of libfixposix is to offer replacements for parts of
+ POSIX whose behaviour is inconsistent across *NIX flavours.
+ .
+ This package contains the debugging symbols.
