@@ -13,14 +13,14 @@ Vcs-Browser: http://git.debian.org/?p=pkg-common-lisp/libfixposix.git;a=summary
 
 Package: libfixposix-dev
 Architecture: any
-Depends: libfixposix0 (= ${binary:Version}), ${misc:Depends}
+Depends: libfixposix1 (= ${binary:Version}), ${misc:Depends}
 Description: Replacement for inconsistent parts of POSIX (development)
  The purpose of libfixposix is to offer replacements for parts of
  POSIX whose behaviour is inconsistent across *NIX flavours.
  .
  This package contains the headers and static library files.
 
-Package: libfixposix0
+Package: libfixposix1
 Section: libs
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}

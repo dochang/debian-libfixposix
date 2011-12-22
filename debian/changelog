@@ -1,6 +1,7 @@
 libfixposix (20111205.git2a9a4d1-1) UNRELEASED; urgency=low
 
   * New upstream git checkout
+  * upgrade library name to libfixposix1
   * debian/control
     + Build-Depends on check & pkg-config
     + upgrade Standards-Version to 3.9.2
