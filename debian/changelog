@@ -1,4 +1,4 @@
-libfixposix (20111205.git2a9a4d1-1) UNRELEASED; urgency=low
+libfixposix (20111205.git2a9a4d1-1) unstable; urgency=low
 
   * New upstream git checkout
   * upgrade library name to libfixposix1
@@ -11,7 +11,7 @@ libfixposix (20111205.git2a9a4d1-1) UNRELEASED; urgency=low
   * debian/rules
     + build static library for *-dev package
 
- --
+ -- Desmond O. Chang <dochang@gmail.com>  Sun, 25 Dec 2011 19:22:37 +0800
 
 libfixposix (20110316.git47f17f7-1) unstable; urgency=low
 
